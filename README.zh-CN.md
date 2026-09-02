@@ -11,7 +11,7 @@
 
 ![左边粘贴 Markdown，右边得到 Word 排版和可编辑公式](docs/demo.zh-CN.gif)
 
-本工具只在本地转换，不上传任何内容。源码可在 **Windows、macOS、Linux** 上运行。
+本工具只在本地转换，不上传任何内容。源码可在 **Windows、macOS、Linux** 上运行。界面默认英语，中文系统会显示中文；也可点窗口右上角 **EN / 中文** 切换。
 
 ## 功能
 

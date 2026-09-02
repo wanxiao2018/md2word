@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from .docxstyle import polish_docx
+from .i18n import t
 from .mathprep import plain_text_from_markdown, prepare_markdown_math, strip_thematic_breaks
 
 
@@ -158,7 +159,7 @@ def markdown_to_docx(md_text: str, output_path: Path) -> ConvertResult:
     """Convert Markdown text to a styled .docx with Word OMML equations."""
     md_text = normalize_markdown(md_text)
     if not md_text.strip():
-        return ConvertResult(False, "内容为空，无法转换。")
+        return ConvertResult(False, t("empty"))
 
     pandoc = find_pandoc()
     output_path = Path(output_path)
@@ -175,33 +176,33 @@ def markdown_to_docx(md_text: str, output_path: Path) -> ConvertResult:
                 polish_docx(output_path)
                 return ConvertResult(
                     True,
-                    f"已保存：{output_path}",
+                    t("saved_path", path=output_path),
                     output_path=output_path,
                     engine="pandoc",
                 )
             except Exception as exc:  # noqa: BLE001
                 fallback_msg = str(exc)
         else:
-            fallback_msg = "未找到 Pandoc，使用内置转换器。"
+            fallback_msg = t("no_pandoc_builtin")
 
         try:
             _fallback_markdown_to_docx(md_text, output_path)
             polish_docx(output_path)
             return ConvertResult(
                 True,
-                f"已保存：{output_path}（{fallback_msg}）",
+                t("saved_fallback", path=output_path, detail=fallback_msg),
                 output_path=output_path,
                 engine="python-docx",
             )
         except Exception as exc:  # noqa: BLE001
-            return ConvertResult(False, f"转换失败：{exc}")
+            return ConvertResult(False, t("convert_fail_exc", exc=exc))
 
 
 def markdown_to_html(md_text: str) -> ConvertResult:
     """Convert Markdown to HTML string for clipboard fallback / preview."""
     md_text = normalize_markdown(md_text)
     if not md_text.strip():
-        return ConvertResult(False, "内容为空，无法转换。")
+        return ConvertResult(False, t("empty"))
 
     pandoc = find_pandoc()
     with tempfile.TemporaryDirectory(prefix="md2word_") as tmp:
@@ -231,22 +232,22 @@ def markdown_to_html(md_text: str) -> ConvertResult:
                     "</body></html>"
                 )
                 html = _inject_word_friendly_styles(html)
-                return ConvertResult(True, "HTML 转换成功", content=html, engine="pandoc")
+                return ConvertResult(True, t("html_ok"), content=html, engine="pandoc")
             except Exception as exc:  # noqa: BLE001
                 fallback_msg = str(exc)
         else:
-            fallback_msg = "未找到 Pandoc"
+            fallback_msg = t("no_pandoc")
 
         try:
             html = _fallback_markdown_to_html(md_text)
             return ConvertResult(
                 True,
-                f"HTML 转换成功（{fallback_msg}）",
+                t("html_ok_detail", detail=fallback_msg),
                 content=html,
                 engine="fallback",
             )
         except Exception as exc:  # noqa: BLE001
-            return ConvertResult(False, f"转换失败：{exc}")
+            return ConvertResult(False, t("convert_fail_exc", exc=exc))
 
 
 def copy_markdown_for_word(md_text: str) -> ConvertResult:
@@ -256,33 +257,33 @@ def copy_markdown_for_word(md_text: str) -> ConvertResult:
 
     md_text = normalize_markdown(md_text)
     if not md_text.strip():
-        return ConvertResult(False, "内容为空，无法转换。")
+        return ConvertResult(False, t("empty"))
 
     with tempfile.TemporaryDirectory(prefix="md2word_") as tmp:
         docx_path = Path(tmp) / "clipboard.docx"
         docx_res = markdown_to_docx(md_text, docx_path)
         if not docx_res.success or not docx_path.is_file():
-            return ConvertResult(False, docx_res.message or "生成 Word 文档失败。")
+            return ConvertResult(False, docx_res.message or t("docx_fail"))
 
         if word_installed():
             try:
                 copy_docx_to_clipboard(docx_path)
                 return ConvertResult(
                     True,
-                    f"已复制 Word 格式（含可编辑公式）到剪贴板，请到 Word 中 {clipboard.paste_shortcut()}",
+                    t("copied_word", paste=clipboard.paste_shortcut()),
                     output_path=docx_path,
                     engine=f"{docx_res.engine}+word",
                 )
             except Exception as exc:  # noqa: BLE001
                 word_err = str(exc)
         else:
-            word_err = "未检测到 Microsoft Word"
+            word_err = t("no_word")
 
         html_res = markdown_to_html(md_text)
         if not html_res.success or not html_res.content:
             return ConvertResult(
                 False,
-                f"复制失败：{word_err}；HTML 回退也失败：{html_res.message}",
+                t("copy_fail", word=word_err, html=html_res.message),
             )
         plain = plain_text_from_markdown(md_text)
         formats = clipboard.set_rich_for_word(
@@ -292,7 +293,7 @@ def copy_markdown_for_word(md_text: str) -> ConvertResult:
         )
         return ConvertResult(
             True,
-            f"已复制富文本（{formats}）。未走 Word 公式通道（{word_err}），建议安装 Word 后重试。",
+            t("copied_rich", formats=formats, word=word_err),
             content=html_res.content,
             engine=html_res.engine,
         )
@@ -304,7 +305,7 @@ def markdown_to_pdf(md_text: str, output_path: Path) -> ConvertResult:
 
     md_text = normalize_markdown(md_text)
     if not md_text.strip():
-        return ConvertResult(False, "内容为空，无法转换。")
+        return ConvertResult(False, t("empty"))
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -313,7 +314,7 @@ def markdown_to_pdf(md_text: str, output_path: Path) -> ConvertResult:
         docx_path = Path(tmp) / "export.docx"
         docx_res = markdown_to_docx(md_text, docx_path)
         if not docx_res.success or not docx_path.is_file():
-            return ConvertResult(False, docx_res.message or "生成 Word 文档失败。")
+            return ConvertResult(False, docx_res.message or t("docx_fail"))
 
         if word_installed():
             try:
@@ -321,14 +322,14 @@ def markdown_to_pdf(md_text: str, output_path: Path) -> ConvertResult:
                 if output_path.is_file():
                     return ConvertResult(
                         True,
-                        f"已保存：{output_path}",
+                        t("saved_path", path=output_path),
                         output_path=output_path,
                         engine="word",
                     )
             except Exception as exc:  # noqa: BLE001
                 word_err = str(exc)
         else:
-            word_err = "未检测到 Microsoft Word"
+            word_err = t("no_word")
 
         soffice = find_soffice()
         if soffice:
@@ -336,19 +337,19 @@ def markdown_to_pdf(md_text: str, output_path: Path) -> ConvertResult:
                 _libreoffice_to_pdf(soffice, docx_path, output_path)
                 return ConvertResult(
                     True,
-                    f"已保存：{output_path}（LibreOffice）",
+                    t("saved_lo", path=output_path),
                     output_path=output_path,
                     engine="libreoffice",
                 )
             except Exception as exc:  # noqa: BLE001
                 return ConvertResult(
                     False,
-                    f"PDF 导出失败：Word（{word_err}）；LibreOffice（{exc}）",
+                    t("pdf_fail", word=word_err, lo=exc),
                 )
 
         return ConvertResult(
             False,
-            f"PDF 导出需要安装 Microsoft Word 或 LibreOffice。Word：{word_err}",
+            t("pdf_need", word=word_err),
         )
 
 
@@ -396,7 +397,7 @@ def markdown_to_rtf(md_text: str) -> ConvertResult:
     """
     md_text = normalize_markdown(md_text)
     if not md_text.strip():
-        return ConvertResult(False, "内容为空，无法转换。")
+        return ConvertResult(False, t("empty"))
 
     pandoc = find_pandoc()
     if not pandoc:

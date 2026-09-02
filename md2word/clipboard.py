@@ -7,6 +7,8 @@ import subprocess
 import sys
 from typing import Optional
 
+from .i18n import t
+
 
 def paste_shortcut() -> str:
     return "⌘V" if sys.platform == "darwin" else "Ctrl+V"
@@ -89,15 +91,15 @@ def _darwin_set_rich(*, html: Optional[str], plain: Optional[str]) -> str:
             timeout=20,
         )
         if proc.returncode == 0:
-            formats.append("HTML")
+            formats.append(t("fmt_html"))
             if plain is not None:
-                formats.append("纯文本")
+                formats.append(t("fmt_plain"))
             return " + ".join(formats)
         # Fall through to plain pbcopy if AppleScript rejects a large payload.
     if plain is None and not body:
         raise ValueError("没有可写入剪贴板的内容")
     _popen_write(["pbcopy"], fallback or body)
-    formats.append("纯文本")
+    formats.append(t("fmt_plain"))
     return " + ".join(formats)
 
 
@@ -128,18 +130,18 @@ def _unix_set_rich(*, html: Optional[str], plain: Optional[str]) -> str:
     formats: list[str] = []
     if html and shutil.which("wl-copy"):
         _popen_write(["wl-copy", "--type", "text/html"], html)
-        formats.append("HTML")
+        formats.append(t("fmt_html"))
         if plain is not None:
             _popen_write(["wl-copy", "--type", "text/plain"], plain)
-            formats.append("纯文本")
+            formats.append(t("fmt_plain"))
         return " + ".join(formats)
     if html and shutil.which("xclip"):
         _popen_write(["xclip", "-selection", "clipboard", "-t", "text/html"], html)
-        formats.append("HTML")
+        formats.append(t("fmt_html"))
         return " + ".join(formats)
     payload = plain if plain is not None else (html or "")
     if not payload:
         raise ValueError("没有可写入剪贴板的内容")
     _unix_set_text(payload)
-    formats.append("纯文本")
+    formats.append(t("fmt_plain"))
     return " + ".join(formats)

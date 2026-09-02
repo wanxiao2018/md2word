@@ -22,6 +22,7 @@ from md2word.converter import (
 )
 from md2word.mathprep import prepare_markdown_math, strip_thematic_breaks
 from md2word import clipboard
+from md2word.i18n import set_lang, t
 from md2word.wordcom import word_installed
 
 
@@ -69,6 +70,18 @@ class ClipboardApiTests(unittest.TestCase):
         self.assertTrue(callable(clipboard.get_text))
         self.assertTrue(callable(clipboard.set_rich_for_word))
         self.assertTrue(clipboard.paste_shortcut())
+
+    def test_i18n_english_and_chinese(self) -> None:
+        from md2word.i18n import lang as current
+
+        prev = current()
+        try:
+            set_lang("en")
+            self.assertEqual(t("ready"), "Ready")
+            set_lang("zh")
+            self.assertEqual(t("ready"), "就绪")
+        finally:
+            set_lang(prev)
 
 
 class MathPrepTests(unittest.TestCase):

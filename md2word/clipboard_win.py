@@ -229,7 +229,9 @@ def set_rich_for_word(
 
         if plain is not None:
             win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, plain)
-            formats.append("纯文本")
+            from .i18n import t
+
+            formats.append(t("fmt_plain"))
     finally:
         win32clipboard.CloseClipboard()
 

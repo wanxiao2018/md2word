@@ -11,10 +11,12 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Optional
 
 from . import clipboard, converter
+from .i18n import lang as ui_lang
+from .i18n import set_lang, t
 from .wordcom import word_installed
 
 
-APP_TITLE = "md2word — Markdown 转 Word"
+APP_TITLE = "md2word"
 APP_MIN_SIZE = (960, 680)
 DEFAULT_EXPORT_DIR = Path.home() / "Documents" / "md2word"
 
@@ -155,7 +157,7 @@ class CheckToggle(tk.Frame):
 class Md2WordApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title(APP_TITLE)
+        self.title(t("app_title"))
         self.minsize(*APP_MIN_SIZE)
         self.geometry("1080x760")
         self.configure(bg=PAGE_BG)
@@ -166,9 +168,9 @@ class Md2WordApp(tk.Tk):
         self._watch_job: Optional[str] = None
         self._last_clip_hash: Optional[int] = None
         self._busy = False
-        self._status_var = tk.StringVar(value="就绪")
+        self._status_var = tk.StringVar(value=t("ready"))
         self._status_icon_var = tk.StringVar(value="·")
-        self._count_var = tk.StringVar(value="0 字")
+        self._count_var = tk.StringVar(value=t("char_count", n=0))
         self._watch_var = tk.BooleanVar(value=False)
         self._auto_convert_var = tk.BooleanVar(value=True)
         self._toggles: list[CheckToggle] = []
@@ -314,25 +316,26 @@ class Md2WordApp(tk.Tk):
         ).pack(anchor="w")
         tk.Label(
             title_col,
-            text="Markdown → Word  ·  公式可编辑  ·  正文自动排版",
+            text=t("tagline"),
             bg=HEADER_BG,
             fg=HEADER_MUTED,
             font=(UI_FONT, 10),
         ).pack(anchor="w", pady=(4, 0))
 
+        self._lang_bar(inner)
         engines = tk.Frame(inner, bg=HEADER_BG)
-        engines.pack(side=tk.RIGHT, anchor="e")
+        engines.pack(side=tk.RIGHT, anchor="e", padx=(0, 18))
         tk.Label(
             engines,
-            text="引擎",
+            text=t("engines"),
             bg=HEADER_BG,
             fg="#7f9dc4",
             font=(UI_FONT, 9),
         ).pack(anchor="e")
         chips = tk.Frame(engines, bg=HEADER_BG)
         chips.pack(anchor="e", pady=(4, 0))
-        self._chip(chips, "Pandoc" if self._pandoc_ok else "内置转换器", self._pandoc_ok).pack(side=tk.LEFT)
-        self._chip(chips, "Word" if self._word_ok else "未检测到 Word", self._word_ok).pack(
+        self._chip(chips, "Pandoc" if self._pandoc_ok else t("engine_builtin"), self._pandoc_ok).pack(side=tk.LEFT)
+        self._chip(chips, "Word" if self._word_ok else t("engine_no_word"), self._word_ok).pack(
             side=tk.LEFT, padx=(14, 0)
         )
 
@@ -346,20 +349,20 @@ class Md2WordApp(tk.Tk):
 
         import_row = tk.Frame(pad, bg=CARD_BG)
         import_row.pack(fill=tk.X)
-        tk.Label(import_row, text="导入", bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
+        tk.Label(import_row, text=t("import"), bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
             side=tk.LEFT, padx=(0, 10)
         )
-        self._btn(import_row, "从剪贴板导入", self.import_clipboard).pack(side=tk.LEFT, padx=(0, 6))
-        self._btn(import_row, "打开文件", self.open_file).pack(side=tk.LEFT, padx=(0, 6))
-        self._btn(import_row, "清空", self.clear_editor).pack(side=tk.LEFT, padx=(0, 16))
+        self._btn(import_row, t("paste_clip"), self.import_clipboard).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(import_row, t("open_file"), self.open_file).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(import_row, t("clear"), self.clear_editor).pack(side=tk.LEFT, padx=(0, 16))
         watch_toggle = CheckToggle(
             import_row,
-            "监视剪贴板",
+            t("watch"),
             self._watch_var,
             command=self._toggle_watch,
         )
         watch_toggle.pack(side=tk.LEFT)
-        auto_toggle = CheckToggle(import_row, "监视时自动转换", self._auto_convert_var)
+        auto_toggle = CheckToggle(import_row, t("auto_convert"), self._auto_convert_var)
         auto_toggle.pack(side=tk.LEFT, padx=(16, 0))
         self._toggles = [watch_toggle, auto_toggle]
 
@@ -367,17 +370,17 @@ class Md2WordApp(tk.Tk):
 
         export_row = tk.Frame(pad, bg=CARD_BG)
         export_row.pack(fill=tk.X)
-        tk.Label(export_row, text="输出", bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
+        tk.Label(export_row, text=t("export"), bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
             side=tk.LEFT, padx=(0, 10)
         )
-        self._btn(export_row, "转换并复制到剪贴板", self.convert_to_clipboard).pack(side=tk.LEFT, padx=(0, 6))
-        self._btn(export_row, "保存 Word", self.save_docx).pack(side=tk.LEFT, padx=(0, 6))
-        self._btn(export_row, "导出 PDF", self.save_pdf).pack(side=tk.LEFT, padx=(0, 6))
-        self._btn(export_row, "转换并打开 Word", self.convert_and_open).pack(side=tk.LEFT)
+        self._btn(export_row, t("convert_copy"), self.convert_to_clipboard).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, t("save_word"), self.save_docx).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, t("export_pdf"), self.save_pdf).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, t("convert_open"), self.convert_and_open).pack(side=tk.LEFT)
 
         tk.Label(
             pad,
-            text="正文格式：首行缩进 2 字符  ·  两端对齐  ·  1.5 倍行距  ·  公式转为 Word 可编辑公式  ·  去掉分节横线",
+            text=t("body_hint"),
             bg=CARD_BG,
             fg="#64748b",
             font=(UI_FONT, 9),
@@ -390,7 +393,7 @@ class Md2WordApp(tk.Tk):
         editor_head.pack(fill=tk.X, padx=14, pady=(10, 4))
         tk.Label(
             editor_head,
-            text="Markdown 原文",
+            text=t("md_source"),
             bg=CARD_BG,
             fg="#0f172a",
             font=(UI_FONT, 10, "bold"),
@@ -428,14 +431,10 @@ class Md2WordApp(tk.Tk):
         self.editor.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         yscroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self._placeholder = (
-            "在这里粘贴 AI 输出的 Markdown 文本…\n\n"
-            "支持：标题 / 粗体斜体 / 列表 / 代码块 / 表格 / 引用 / 链接 / LaTeX 公式\n\n"
-            "推荐流程：\n"
-            "1. 在 ChatGPT / Claude / Cursor 等软件中复制 Markdown\n"
-            f"2. 点击「从剪贴板导入」或 {ACCEL}+Shift+V\n"
-            "3. 点击「转换并复制到剪贴板」\n"
-            f"4. 到 Word 中 {clipboard.paste_shortcut()} 粘贴（公式为可编辑的 Word 公式）\n"
+        self._placeholder = t(
+            "placeholder",
+            accel=ACCEL,
+            paste=clipboard.paste_shortcut(),
         )
         self._placeholder_active = True
         self.editor.insert("1.0", self._placeholder)
@@ -447,10 +446,7 @@ class Md2WordApp(tk.Tk):
 
         tips = ttk.Label(
             root,
-            text=(
-                f"快捷键：{ACCEL}+Shift+V 导入  ·  {ACCEL}+Enter 转换并复制  ·  "
-                f"{ACCEL}+S 保存 Word  ·  {ACCEL}+P 导出 PDF  ·  Esc 清空"
-            ),
+            text=t("shortcuts", accel=ACCEL),
             style="Sub.TLabel",
         )
         tips.pack(fill=tk.X, pady=(8, 6))
@@ -475,6 +471,53 @@ class Md2WordApp(tk.Tk):
             justify=tk.LEFT,
         )
         self._status_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12), pady=7)
+
+    def _lang_bar(self, parent) -> None:
+        bar = tk.Frame(parent, bg=HEADER_BG)
+        bar.pack(side=tk.RIGHT, anchor="e")
+        current = ui_lang()
+        for code, label in (("en", "EN"), ("zh", "中文")):
+            active = code == current
+            lbl = tk.Label(
+                bar,
+                text=label,
+                bg=HEADER_BG,
+                fg=HEADER_FG if active else HEADER_MUTED,
+                font=(UI_FONT, 9, "bold" if active else "normal"),
+                cursor="hand2",
+            )
+            lbl.pack(side=tk.LEFT, padx=(8, 0))
+            lbl.bind("<Button-1>", lambda _e, c=code: self._switch_lang(c))
+
+    def _switch_lang(self, code: str) -> None:
+        if code == ui_lang() or self._busy:
+            return
+        md = None if self._placeholder_active else self.get_markdown()
+        watch = self._watch_var.get()
+        auto = self._auto_convert_var.get()
+        if self._watch_job:
+            try:
+                self.after_cancel(self._watch_job)
+            except Exception:  # noqa: BLE001
+                pass
+            self._watch_job = None
+        set_lang(code)
+        for child in self.winfo_children():
+            child.destroy()
+        self._action_btns.clear()
+        self._toggles.clear()
+        self._watch_var = tk.BooleanVar(value=watch)
+        self._auto_convert_var = tk.BooleanVar(value=auto)
+        self._status_var = tk.StringVar(value=t("ready"))
+        self._status_icon_var = tk.StringVar(value="·")
+        self._count_var = tk.StringVar(value=t("char_count", n=0))
+        self.title(t("app_title"))
+        self._build_style()
+        self._build_ui()
+        if md:
+            self.set_markdown(md)
+        if watch:
+            self._poll_clipboard()
 
     def _btn(self, parent, text: str, command) -> ttk.Button:
         btn = ttk.Button(parent, text=text, command=command)
@@ -536,10 +579,10 @@ class Md2WordApp(tk.Tk):
 
     def _update_count(self) -> None:
         if self._placeholder_active:
-            self._count_var.set("0 字")
+            self._count_var.set(t("char_count", n=0))
             return
         text = self.editor.get("1.0", "end-1c")
-        self._count_var.set(f"{len(text.strip())} 字")
+        self._count_var.set(t("char_count", n=len(text.strip())))
 
     def _clear_placeholder(self, _event=None) -> None:
         if self._placeholder_active:
@@ -573,27 +616,27 @@ class Md2WordApp(tk.Tk):
         self.editor.configure(fg="#94a3b8")
         self._placeholder_active = True
         self._update_count()
-        self._set_status("已清空")
+        self._set_status(t("cleared"))
 
     def import_clipboard(self) -> None:
         try:
             text = clipboard.get_text()
         except Exception as exc:  # noqa: BLE001
-            messagebox.showerror("错误", f"读取剪贴板失败：\n{exc}")
+            messagebox.showerror(t("error"), t("clip_read_fail", exc=exc))
             return
         if not text.strip():
-            self._set_status("剪贴板为空", "err")
+            self._set_status(t("clip_empty"), "err")
             return
         self.set_markdown(text)
-        kind = "Markdown" if converter.looks_like_markdown(text) else "文本"
-        self._set_status(f"已从剪贴板导入 {len(text)} 字符（识别为{kind}）", "ok")
+        kind = t("kind_md") if converter.looks_like_markdown(text) else t("kind_text")
+        self._set_status(t("imported", n=len(text), kind=kind), "ok")
 
     def open_file(self) -> None:
         path = filedialog.askopenfilename(
-            title="打开 Markdown 文件",
+            title=t("open_md"),
             filetypes=[
                 ("Markdown", "*.md *.markdown *.mdx *.txt" if not sys.platform == "win32" else "*.md;*.markdown;*.mdx;*.txt"),
-                ("所有文件", "*.*"),
+                (t("all_files"), "*.*"),
             ],
         )
         if not path:
@@ -603,15 +646,15 @@ class Md2WordApp(tk.Tk):
         except UnicodeDecodeError:
             content = Path(path).read_text(encoding="gbk", errors="replace")
         except Exception as exc:  # noqa: BLE001
-            messagebox.showerror("错误", f"无法读取文件：\n{exc}")
+            messagebox.showerror(t("error"), t("read_fail", exc=exc))
             return
         self.set_markdown(content)
-        self._set_status(f"已打开：{path}", "ok")
+        self._set_status(t("opened", path=path), "ok")
 
     def _ensure_content(self) -> Optional[str]:
         md = self.get_markdown()
         if not md.strip():
-            messagebox.showinfo("提示", "请先粘贴或导入 Markdown 内容。")
+            messagebox.showinfo(t("hint"), t("need_content"))
             return None
         return md
 
@@ -619,17 +662,17 @@ class Md2WordApp(tk.Tk):
         md = self._ensure_content()
         if md is None or self._busy:
             return
-        self._set_busy(True, "正在转换为 Word 公式并复制…")
+        self._set_busy(True, t("converting"))
         self._run_bg(lambda: converter.copy_markdown_for_word(md), self._after_convert_clipboard)
 
     def _after_convert_clipboard(self, res, err) -> None:
         self._set_busy(False)
         if err is not None:
-            messagebox.showerror("错误", f"写入剪贴板失败：\n{err}")
-            self._set_status(f"失败：{err}", "err")
+            messagebox.showerror(t("error"), t("clip_write_fail", err=err))
+            self._set_status(t("failed", err=err), "err")
             return
         if not res.success:
-            messagebox.showerror("转换失败", res.message)
+            messagebox.showerror(t("convert_fail"), res.message)
             self._set_status(res.message, "err")
             return
         self._set_status(res.message, "ok")
@@ -642,35 +685,35 @@ class Md2WordApp(tk.Tk):
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         initial = DEFAULT_EXPORT_DIR / f"md2word_{stamp}.docx"
         path = filedialog.asksaveasfilename(
-            title="保存为 Word 文档",
+            title=t("save_docx_title"),
             defaultextension=".docx",
             initialfile=initial.name,
             initialdir=str(DEFAULT_EXPORT_DIR),
-            filetypes=[("Word 文档", "*.docx")],
+            filetypes=[(t("word_docs"), "*.docx")],
         )
         if not path:
             return
-        self._set_busy(True, "正在生成 .docx…")
+        self._set_busy(True, t("saving_docx"))
         out = Path(path)
         self._run_bg(lambda: converter.markdown_to_docx(md, out), lambda res, err: self._after_save_docx(res, err, out))
 
     def _after_save_docx(self, res, err, path: Path) -> None:
         self._set_busy(False)
         if err is not None:
-            messagebox.showerror("保存失败", str(err))
+            messagebox.showerror(t("save_fail"), str(err))
             self._set_status(str(err), "err")
             return
         if not res.success:
-            messagebox.showerror("保存失败", res.message)
+            messagebox.showerror(t("save_fail"), res.message)
             self._set_status(res.message, "err")
             return
         self._last_docx = path
         self._set_status(res.message, "ok")
-        if messagebox.askyesno("保存成功", f"{res.message}\n\n是否立即用 Word 打开？"):
+        if messagebox.askyesno(t("save_ok"), t("open_in_word", msg=res.message)):
             try:
                 converter.open_file(path)
             except Exception as exc:  # noqa: BLE001
-                messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
+                messagebox.showwarning(t("hint"), t("saved_no_open", exc=exc))
 
     def save_pdf(self) -> None:
         md = self._ensure_content()
@@ -680,34 +723,34 @@ class Md2WordApp(tk.Tk):
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         initial = DEFAULT_EXPORT_DIR / f"md2word_{stamp}.pdf"
         path = filedialog.asksaveasfilename(
-            title="导出为 PDF",
+            title=t("export_pdf_title"),
             defaultextension=".pdf",
             initialfile=initial.name,
             initialdir=str(DEFAULT_EXPORT_DIR),
-            filetypes=[("PDF 文档", "*.pdf")],
+            filetypes=[(t("pdf_docs"), "*.pdf")],
         )
         if not path:
             return
-        self._set_busy(True, "正在导出 PDF…")
+        self._set_busy(True, t("exporting_pdf"))
         out = Path(path)
         self._run_bg(lambda: converter.markdown_to_pdf(md, out), lambda res, err: self._after_save_pdf(res, err, out))
 
     def _after_save_pdf(self, res, err, path: Path) -> None:
         self._set_busy(False)
         if err is not None:
-            messagebox.showerror("导出失败", str(err))
+            messagebox.showerror(t("export_fail"), str(err))
             self._set_status(str(err), "err")
             return
         if not res.success:
-            messagebox.showerror("导出失败", res.message)
+            messagebox.showerror(t("export_fail"), res.message)
             self._set_status(res.message, "err")
             return
         self._set_status(res.message, "ok")
-        if messagebox.askyesno("导出成功", f"{res.message}\n\n是否立即打开？"):
+        if messagebox.askyesno(t("export_ok"), t("open_now", msg=res.message)):
             try:
                 converter.open_file(path)
             except Exception as exc:  # noqa: BLE001
-                messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
+                messagebox.showwarning(t("hint"), t("saved_no_open", exc=exc))
 
     def convert_and_open(self) -> None:
         md = self._ensure_content()
@@ -716,32 +759,32 @@ class Md2WordApp(tk.Tk):
         DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out = DEFAULT_EXPORT_DIR / f"md2word_{stamp}.docx"
-        self._set_busy(True, "正在生成 .docx…")
+        self._set_busy(True, t("saving_docx"))
         self._run_bg(lambda: converter.markdown_to_docx(md, out), lambda res, err: self._after_convert_open(res, err, out))
 
     def _after_convert_open(self, res, err, out: Path) -> None:
         self._set_busy(False)
         if err is not None:
-            messagebox.showerror("转换失败", str(err))
+            messagebox.showerror(t("convert_fail"), str(err))
             self._set_status(str(err), "err")
             return
         if not res.success or not res.output_path:
-            messagebox.showerror("转换失败", res.message)
+            messagebox.showerror(t("convert_fail"), res.message)
             self._set_status(res.message, "err")
             return
         self._last_docx = res.output_path
-        self._set_status(res.message + " — 正在打开…", "ok")
+        self._set_status(t("opening", msg=res.message), "ok")
         try:
             converter.open_file(res.output_path)
         except Exception as exc:  # noqa: BLE001
-            messagebox.showwarning("提示", f"文档已生成：\n{res.output_path}\n\n但无法自动打开：\n{exc}")
+            messagebox.showwarning(t("hint"), t("made_no_open", path=res.output_path, exc=exc))
 
     def _toggle_watch(self) -> None:
         for toggle in self._toggles:
             toggle.refresh()
         if self._watch_var.get():
             self._last_clip_hash = None
-            self._set_status("已开启剪贴板监视", "ok")
+            self._set_status(t("watch_on"), "ok")
             self._poll_clipboard()
         else:
             if self._watch_job:
@@ -750,7 +793,7 @@ class Md2WordApp(tk.Tk):
                 except Exception:  # noqa: BLE001
                     pass
                 self._watch_job = None
-            self._set_status("已关闭剪贴板监视")
+            self._set_status(t("watch_off"))
 
     def _poll_clipboard(self) -> None:
         if not self._watch_var.get():
@@ -762,7 +805,7 @@ class Md2WordApp(tk.Tk):
                 if converter.looks_like_markdown(text):
                     self._last_clip_hash = h
                     self.set_markdown(text)
-                    self._set_status(f"监视到 Markdown（{len(text)} 字），已导入", "ok")
+                    self._set_status(t("watch_imported", n=len(text)), "ok")
                     if self._auto_convert_var.get() and not self._busy:
                         self.after(50, self._auto_convert_from_watch)
                 else:
@@ -775,16 +818,16 @@ class Md2WordApp(tk.Tk):
         md = self.get_markdown()
         if not md.strip() or self._busy:
             return
-        self._set_busy(True, "监视模式：正在自动转换…")
+        self._set_busy(True, t("watch_converting"))
         self._run_bg(lambda: converter.copy_markdown_for_word(md), self._after_auto_convert)
 
     def _after_auto_convert(self, res, err) -> None:
         self._set_busy(False)
         if err is not None:
-            self._set_status(f"自动转换失败：{err}", "err")
+            self._set_status(t("auto_fail", msg=err), "err")
             return
         if not res.success:
-            self._set_status(f"自动转换失败：{res.message}", "err")
+            self._set_status(t("auto_fail", msg=res.message), "err")
             return
         try:
             self._last_clip_hash = hash(clipboard.get_text())

@@ -11,7 +11,7 @@ Turn Markdown copied from ChatGPT, Claude, Cursor, and similar tools into Word-r
 
 ![Paste Markdown on the left, get a formatted Word document with editable equations on the right](docs/demo.gif)
 
-Conversion runs entirely on your machine. Nothing is uploaded. The source runs on **Windows, macOS, and Linux**.
+Conversion runs entirely on your machine. Nothing is uploaded. The source runs on **Windows, macOS, and Linux**. The app UI defaults to English and switches to Chinese on Chinese-language systems; use **EN / 中文** in the header to change it.
 
 ## Features
 
