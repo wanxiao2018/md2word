@@ -1,12 +1,12 @@
-## 正态分布在说什么
+## What a normal distribution is saying
 
-连续随机变量如果像钟形曲线那样分布，通常写成 (N(\mu,\sigma^2))。常见记号：
+If a continuous random variable follows a bell curve, it is usually written as (N(\mu,\sigma^2)). Common symbols:
 
-- 位置：均值 (\mu)
-- 尺度：标准差 (\sigma)
-- 标准化以后：(\hat{z})
+- Location: mean (\mu)
+- Scale: standard deviation (\sigma)
+- After standardizing: (\hat{z})
 
-密度函数常常被模型直接写成：
+Models often emit the density as:
 
 [
 
@@ -14,11 +14,11 @@ f(x)=\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
 
 ]
 
-注意这是密度，不是“落在某一点的概率”。
+That is a density, not the probability of landing on a single point.
 
-## 判别式
+## Discriminant
 
-做题时如果看到：
+When you see:
 
 [
 
@@ -26,13 +26,13 @@ f(x)=\frac{1}{\sigma\sqrt{2\pi}}\exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
 
 ]
 
-那么：
+then:
 
-- $\Delta>0$：两个不同实根
-- $\Delta=0$：一个重根
-- $\Delta<0$：没有实根
+- $\Delta>0$: two distinct real roots
+- $\Delta=0$: one repeated root
+- $\Delta<0$: no real roots
 
-求根公式是：
+The quadratic formula is:
 
 [
 

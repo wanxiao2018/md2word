@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>md2word demo</title>
@@ -20,7 +20,7 @@
       height: 720px;
       overflow: hidden;
       background: #c5d2e1;
-      font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif;
+      font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
     }
     .stage {
       width: 1280px;
@@ -119,12 +119,13 @@
     }
     .placeholder { color: #94a3b8; }
     .md-body { display: none; }
+    [hidden] { display: none !important; }
     body[data-step="1"] .placeholder,
     body[data-step="2"] .placeholder,
     body[data-step="3"] .placeholder { display: none; }
-    body[data-step="1"] .md-body,
-    body[data-step="2"] .md-body,
-    body[data-step="3"] .md-body { display: block; }
+    body[data-step="1"] .md-body:not([hidden]),
+    body[data-step="2"] .md-body:not([hidden]),
+    body[data-step="3"] .md-body:not([hidden]) { display: block; }
     .tok-h { color: #1d4ed8; font-weight: 700; }
     .tok-math { color: #0f766e; }
     .tok-list { color: #334155; }
@@ -237,7 +238,7 @@
     body[data-step="1"] .word-doc,
     body[data-step="2"] .word-doc { display: none; }
     body[data-step="3"] .word-empty { display: none; }
-    body[data-step="3"] .word-doc { display: block; }
+    body[data-step="3"] .word-doc:not([hidden]) { display: block; }
 
     .labels {
       position: absolute;
@@ -251,41 +252,57 @@
     .labels span { text-align: center; }
   </style>
 </head>
-<body data-step="0">
+<body data-step="0" data-lang="en">
   <div class="stage">
     <section class="win">
-      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b>md2word — Markdown 转 Word</b></div>
+      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b data-i18n="capMd">md2word — Markdown to Word</b></div>
       <div class="md-header">
         <div class="brand">
           <img src="../assets/app-32.png" alt="" />
           <div>
             <h1>md2word</h1>
-            <p>Markdown → Word  ·  公式可编辑</p>
+            <p data-i18n="tagline">Markdown → Word  ·  Editable equations</p>
           </div>
         </div>
         <div class="engines">
-          引擎
+          <span data-i18n="engines">Engines</span>
           <div class="chips"><div><span>√</span>Pandoc</div><div><span>√</span>Word</div></div>
         </div>
       </div>
       <div class="toolbar">
         <div class="row">
-          <div class="lab">导入</div>
-          <button class="btn btn-import">从剪贴板导入</button>
-          <button class="btn">打开文件</button>
-          <button class="btn">清空</button>
+          <div class="lab" data-i18n="import">Import</div>
+          <button class="btn btn-import" data-i18n="paste">Paste clipboard</button>
+          <button class="btn" data-i18n="open">Open file</button>
+          <button class="btn" data-i18n="clear">Clear</button>
         </div>
         <div class="row">
-          <div class="lab">输出</div>
-          <button class="btn accent">转换并复制到剪贴板</button>
-          <button class="btn">保存 Word</button>
+          <div class="lab" data-i18n="export">Export</div>
+          <button class="btn accent" data-i18n="convert">Convert and copy</button>
+          <button class="btn" data-i18n="save">Save Word</button>
         </div>
-        <div class="hint">正文：首行缩进 2 字符  ·  两端对齐  ·  1.5 倍行距  ·  公式可编辑</div>
+        <div class="hint" data-i18n="hint">Body: 2-char indent · justified · 1.5 line spacing · editable equations</div>
       </div>
       <div class="editor-wrap">
         <div class="editor">
-          <div class="placeholder">在这里粘贴 AI 输出的 Markdown 文本…<br/><br/>支持：标题 / 列表 / 表格 / LaTeX 公式</div>
-          <div class="md-body"><span class="tok-h">## 复利增长</span>
+          <div class="placeholder" data-i18n="placeholder">Paste AI Markdown here…<br/><br/>Headings / lists / tables / LaTeX math</div>
+          <div class="md-body lang-en"><span class="tok-h">## Compound growth</span>
+
+Principal $P$ grows at rate $r$ for $t$ years:
+
+<span class="tok-math">$$
+A = P(1+r)^{t}
+$$</span>
+
+<span class="tok-list">- Inline math: $E = mc^2$
+- AI-style: (\mu) and (\hat{x})</span>
+
+<span class="tok-math">[
+
+\Delta = b^2-4ac
+
+]</span></div>
+          <div class="md-body lang-zh" hidden><span class="tok-h">## 复利增长</span>
 
 本金 $P$ 按年利率 $r$ 增长 $t$ 年：
 
@@ -303,24 +320,35 @@ $$</span>
 ]</span></div>
         </div>
       </div>
-      <div class="status" id="status">就绪</div>
+      <div class="status" id="status">Ready</div>
     </section>
 
     <div class="mid">
       <div class="arrow">→</div>
-      <small>转换</small>
+      <small data-i18n="convertMid">Convert</small>
     </div>
 
     <section class="win">
-      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b>文档1 - Word</b></div>
+      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b data-i18n="capWord">Document1 - Word</b></div>
       <div class="word-ribbon">
-        <div class="word-title"><div class="word-icon">W</div>文档1</div>
-        <div class="tabs"><em>开始</em><span>插入</span><span>设计</span><span>布局</span></div>
+        <div class="word-title"><div class="word-icon">W</div><span data-i18n="doc1">Document1</span></div>
+        <div class="tabs lang-en"><em>Home</em><span>Insert</span><span>Design</span><span>Layout</span></div>
+        <div class="tabs lang-zh" hidden><em>开始</em><span>插入</span><span>设计</span><span>布局</span></div>
       </div>
       <div class="word-stage">
         <div class="page">
-          <div class="word-empty">粘贴后将在这里看到 Word 排版</div>
-          <div class="word-doc">
+          <div class="word-empty" data-i18n="wordEmpty">Formatted Word output appears here after paste</div>
+          <div class="word-doc lang-en">
+            <h2>Compound growth</h2>
+            <p>Principal <i>P</i> grows at annual rate <i>r</i> for <i>t</i> years:</p>
+            <div class="omml"><span class="box"><i>A</i> = <i>P</i>(1+<i>r</i>)<sup><i>t</i></sup></span></div>
+            <ul>
+              <li>Inline math: <i>E</i> = <i>mc</i><sup>2</sup></li>
+              <li>AI-style: <i>μ</i> and <i>x̂</i></li>
+            </ul>
+            <div class="omml"><span class="box"><i>Δ</i> = <i>b</i><sup>2</sup> − 4<i>ac</i></span></div>
+          </div>
+          <div class="word-doc lang-zh" hidden>
             <h2>复利增长</h2>
             <p>本金 <i>P</i> 按年利率 <i>r</i> 增长 <i>t</i> 年：</p>
             <div class="omml"><span class="box"><i>A</i> = <i>P</i>(1+<i>r</i>)<sup><i>t</i></sup></span></div>
@@ -335,19 +363,81 @@ $$</span>
     </section>
   </div>
   <script>
-    const texts = {
-      0: "就绪",
-      1: "√ 已从剪贴板导入 Markdown",
-      2: "… 正在转换为 Word 公式与排版",
-      3: "√ 已复制到剪贴板，可在 Word 中 Ctrl+V"
+    const I18N = {
+      en: {
+        capMd: "md2word — Markdown to Word",
+        tagline: "Markdown → Word  ·  Editable equations",
+        engines: "Engines",
+        import: "Import",
+        paste: "Paste clipboard",
+        open: "Open file",
+        clear: "Clear",
+        export: "Export",
+        convert: "Convert and copy",
+        save: "Save Word",
+        hint: "Body: 2-char indent · justified · 1.5 line spacing · editable equations",
+        placeholder: "Paste AI Markdown here…<br/><br/>Headings / lists / tables / LaTeX math",
+        convertMid: "Convert",
+        capWord: "Document1 - Word",
+        doc1: "Document1",
+        wordEmpty: "Formatted Word output appears here after paste",
+        status: {
+          0: "Ready",
+          1: "√ Markdown pasted from clipboard",
+          2: "… Converting to Word equations and styles",
+          3: "√ Copied — paste in Word with Ctrl+V"
+        }
+      },
+      zh: {
+        capMd: "md2word — Markdown 转 Word",
+        tagline: "Markdown → Word  ·  公式可编辑",
+        engines: "引擎",
+        import: "导入",
+        paste: "从剪贴板导入",
+        open: "打开文件",
+        clear: "清空",
+        export: "输出",
+        convert: "转换并复制到剪贴板",
+        save: "保存 Word",
+        hint: "正文：首行缩进 2 字符  ·  两端对齐  ·  1.5 倍行距  ·  公式可编辑",
+        placeholder: "在这里粘贴 AI 输出的 Markdown 文本…<br/><br/>支持：标题 / 列表 / 表格 / LaTeX 公式",
+        convertMid: "转换",
+        capWord: "文档1 - Word",
+        doc1: "文档1",
+        wordEmpty: "粘贴后将在这里看到 Word 排版",
+        status: {
+          0: "就绪",
+          1: "√ 已从剪贴板导入 Markdown",
+          2: "… 正在转换为 Word 公式与排版",
+          3: "√ 已复制到剪贴板，可在 Word 中 Ctrl+V"
+        }
+      }
     };
+
+    const params = new URLSearchParams(location.search);
+    const lang = params.get("lang") === "zh" ? "zh" : "en";
+    const pack = I18N[lang];
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.body.dataset.lang = lang;
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (pack[key] != null) el.innerHTML = pack[key];
+    });
+    document.querySelectorAll(".lang-en").forEach((el) => {
+      el.hidden = lang !== "en";
+    });
+    document.querySelectorAll(".lang-zh").forEach((el) => {
+      el.hidden = lang !== "zh";
+    });
+
     window.setStep = (n) => {
       document.body.dataset.step = String(n);
-      document.getElementById("status").textContent = texts[n];
+      document.getElementById("status").textContent = pack.status[n];
       return n;
     };
-    const q = Number(new URLSearchParams(location.search).get("step") || "0");
+    const q = Number(params.get("step") || "0");
     window.setStep(Number.isFinite(q) ? q : 0);
   </script>
 </body>
 </html>
+

@@ -1,42 +1,42 @@
-# 复利、方程与一段说明
+# Compound growth, equations, and a short note
 
-这是一份用于演示转换效果的 Markdown。从 ChatGPT、Claude、Cursor 等工具复制后，可直接导入 md2word。
+This Markdown file is a conversion demo. Copy it from ChatGPT, Claude, Cursor, or a similar tool, then import it into md2word.
 
-## 正文排版
+## Body styling
 
-转换后的正文默认：**首行缩进 2 字符**、**两端对齐**、**1.5 倍行距**。
+Converted body text defaults to a **2-character first-line indent**, **justified alignment**, and **1.5 line spacing**.
 
-> 引用块会保留。分节横线（`---`）在转换时会被去掉，避免 Word 里多出一条分隔线。
+> Block quotes are kept. Thematic breaks (`---`) are stripped so Word does not draw an extra divider.
 
-每年把利息并入本金，本金 $P$ 按年利率 $r$ 增长 $t$ 年后变为：
+If interest is compounded annually, principal $P$ at rate $r$ after $t$ years becomes:
 
 $$
 A = P(1+r)^{t}
 $$
 
-## 列表与表格
+## Lists and tables
 
-- 无序列表
-- **加粗** 与 *斜体*
-- 行内代码：`print("hello")`
+- Unordered list
+- **Bold** and *italic*
+- Inline code: `print("hello")`
 
-| 项目 | 说明 |
+| Item | Notes |
 | --- | --- |
-| Markdown | 源格式 |
-| Word | 目标格式，含可编辑公式 |
-| PDF | 需安装 Microsoft Word |
+| Markdown | Source format |
+| Word | Target format, including editable equations |
+| PDF | Requires Microsoft Word or LibreOffice |
 
-## 公式
+## Math
 
-行内公式：$E = mc^2$。AI 有时会写成不带 `$` 的括号形式，例如 (\mu) 或 (\hat{x})，md2word 会尽量识别并包成 Word 公式。
+Inline math: $E = mc^2$. AI tools sometimes omit `$` delimiters, for example (\mu) or (\hat{x}). md2word tries to wrap those as Word equations.
 
-一元二次方程的求根公式：
+Quadratic formula:
 
 $$
 x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}
 $$
 
-也支持这种常见的 AI 输出（方括号包住的 LaTeX）：
+This common AI layout (LaTeX inside brackets) is also supported:
 
 [
 
@@ -44,7 +44,7 @@ $$
 
 ]
 
-## 代码块
+## Code
 
 ```python
 def hello(name: str) -> str:

@@ -1,50 +1,52 @@
 # md2word
 
+**English** | [简体中文](README.zh-CN.md)
+
 [![CI](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml/badge.svg)](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-把 ChatGPT、Claude、Cursor 等 AI 工具复制出来的 **Markdown** 转成 Word 可识别的富文本、`.docx` 或 **PDF**。公式会尽量变成可编辑的 Word 公式（OMML）。
+Turn Markdown copied from ChatGPT, Claude, Cursor, and similar tools into Word-ready rich text, `.docx`, or **PDF**. Equations are converted to editable Word formulas (OMML) when possible.
 
-![左边粘贴 Markdown，右边得到 Word 排版和可编辑公式](docs/demo.gif)
+![Paste Markdown on the left, get a formatted Word document with editable equations on the right](docs/demo.gif)
 
-本工具只在本地转换，不上传任何内容。源码可在 **Windows、macOS、Linux** 上运行。
+Conversion runs entirely on your machine. Nothing is uploaded. The source runs on **Windows, macOS, and Linux**.
 
-## 功能
+## Features
 
-- **转换并复制到剪贴板**：生成 Word 原生内容（含可编辑公式），粘贴到 Word 时保留格式
-- **保存为 .docx** / **转换并打开 Word**
-- **导出 PDF**（需要 Microsoft Word 或 LibreOffice）
-- **从剪贴板导入** Markdown，可监视剪贴板并自动转换
-- 正文自动排版：首行缩进 2 字符、两端对齐、1.5 倍行距
-- 去掉 Markdown 分节横线（`---`）
-- 识别 AI 常见的不规范公式写法，例如 `(\mu)`、方括号包住的 LaTeX 块
-- 优先使用本机 [Pandoc](https://pandoc.org/)；没有则回退到内置转换器
+- **Convert and copy**: native Word content (including editable equations) so paste keeps formatting
+- **Save as .docx** / **convert and open in Word**
+- **Export PDF** (requires Microsoft Word or LibreOffice)
+- **Paste from clipboard**, with optional clipboard watching and auto-convert
+- Body styling: first-line indent of 2 characters, justified alignment, 1.5 line spacing
+- Strips Markdown section rules (`---`)
+- Recognizes messy AI math such as `(\mu)` and bracket-wrapped LaTeX blocks
+- Prefers local [Pandoc](https://pandoc.org/); falls back to the built-in converter
 
-## 推荐流程
+## Typical workflow
 
-1. 在 AI 软件中复制 Markdown
-2. 打开 md2word → **从剪贴板导入**（Windows：`Ctrl+Shift+V`，Mac：`⌘⇧V`）
-3. **转换并复制到剪贴板**（Windows：`Ctrl+Enter`，Mac：`⌘Enter`）
-4. 打开 Word，粘贴（Windows：`Ctrl+V`，Mac：`⌘V`）
+1. Copy Markdown from an AI tool
+2. Open md2word → **Paste clipboard** (`Ctrl+Shift+V` on Windows, `⌘⇧V` on Mac)
+3. **Convert and copy** (`Ctrl+Enter` / `⌘Enter`)
+4. Paste into Word (`Ctrl+V` / `⌘V`)
 
-也可以开启 **监视剪贴板 + 自动转换**，复制后直接去 Word 粘贴。
+Or enable **Watch clipboard + auto-convert**, then paste directly in Word.
 
-示例输入见 [`examples/sample.md`](examples/sample.md) 和 [`examples/ai-math.md`](examples/ai-math.md)。
+Sample input: [`examples/sample.md`](examples/sample.md) and [`examples/ai-math.md`](examples/ai-math.md).
 
-## 快捷键
+## Shortcuts
 
-| Windows | macOS | 作用 |
-|---------|-------|------|
-| `Ctrl+Shift+V` | `⌘⇧V` | 从剪贴板导入 |
-| `Ctrl+Enter` | `⌘Enter` | 转换并复制到剪贴板 |
-| `Ctrl+S` | `⌘S` | 保存为 .docx |
-| `Ctrl+P` | `⌘P` | 导出 PDF |
-| `Esc` | `Esc` | 清空编辑区 |
+| Windows | macOS | Action |
+|---------|-------|--------|
+| `Ctrl+Shift+V` | `⌘⇧V` | Paste from clipboard |
+| `Ctrl+Enter` | `⌘Enter` | Convert and copy |
+| `Ctrl+S` | `⌘S` | Save as .docx |
+| `Ctrl+P` | `⌘P` | Export PDF |
+| `Esc` | `Esc` | Clear the editor |
 
-## 安装与运行
+## Install and run
 
-环境：Python 3.10+。建议同时安装 [Pandoc](https://pandoc.org/installing.html)。有 Microsoft Word 时，公式会按 Word 可编辑公式复制到剪贴板；没有 Word 时会回退到 HTML 富文本。导出 PDF 需要 Word 或 [LibreOffice](https://www.libreoffice.org/)。
+Requires Python 3.10+. [Pandoc](https://pandoc.org/installing.html) is recommended. With Microsoft Word installed, equations are copied as editable Word formulas; otherwise the app falls back to rich HTML. PDF export needs Word or [LibreOffice](https://www.libreoffice.org/).
 
 ### Windows
 
@@ -53,16 +55,16 @@ pip install -r requirements.txt
 python main.py
 ```
 
-或双击 `start.bat`。
+Or double-click `start.bat`.
 
-打包 exe：
+Build a single-file exe:
 
 ```bat
 pip install -r requirements-dev.txt
 python build_exe.py
 ```
 
-产物：`dist\md2word.exe`。单文件约 18 MB；杀毒软件偶发误报时可添加信任。
+Output: `dist\md2word.exe` (~18 MB). Add it to antivirus exclusions if it is flagged.
 
 ### macOS / Linux
 
@@ -71,51 +73,51 @@ python3 -m pip install -r requirements.txt
 python3 main.py
 ```
 
-或：
+Or:
 
 ```bash
 chmod +x start.sh
 ./start.sh
 ```
 
-macOS 可用 Homebrew 安装 Pandoc：`brew install pandoc`。
+On macOS you can install Pandoc with Homebrew: `brew install pandoc`.
 
-## 测试
+## Tests
 
 ```bash
 python -m unittest tests.test_md2word -v
 ```
 
-未安装 Pandoc 或 Word 的用例会自动跳过。
+Cases that need Pandoc or Word are skipped when those tools are missing.
 
-## 项目结构
+## Layout
 
 ```
 md2word/
-  main.py              # 入口
-  start.bat            # Windows 启动
-  start.sh             # macOS / Linux 启动
-  build_exe.py         # Windows 打包脚本
+  main.py              # entry point
+  start.bat            # Windows launcher
+  start.sh             # macOS / Linux launcher
+  build_exe.py         # Windows packager
   md2word/
     converter.py       # Markdown → docx / html / pdf
-    clipboard.py       # 跨平台剪贴板
-    clipboard_win.py   # Windows 富文本剪贴板
-    mathprep.py        # 把 AI 公式包装成 TeX 定界符
-    docxstyle.py       # Word 正文样式
-    wordcom.py         # Word 复制 / 导出 PDF（Windows COM / macOS AppleScript）
-    gui.py             # 图形界面
-  examples/            # 示例 Markdown
-  assets/              # 应用图标
-  docs/demo.gif        # README 演示动图
-  tests/               # 单元测试
+    clipboard.py       # cross-platform clipboard
+    clipboard_win.py   # Windows rich clipboard
+    mathprep.py        # wrap AI math in TeX delimiters
+    docxstyle.py       # Word body styles
+    wordcom.py         # Word copy / PDF (COM / AppleScript)
+    gui.py             # desktop UI
+  examples/            # sample Markdown
+  assets/              # app icon
+  docs/demo.gif        # README demo (English)
+  tests/               # unit tests
 ```
 
-默认导出目录：`文档/Documents/md2word/`。
+Default export folder: `Documents/md2word/`.
 
-## 参与贡献
+## Contributing
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。欢迎提 Issue 和 Pull Request。
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and pull requests are welcome.
 
-## 许可证
+## License
 
 [MIT](LICENSE)
