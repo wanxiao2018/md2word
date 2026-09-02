@@ -5,6 +5,7 @@
 [![CI](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml/badge.svg)](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![LINUX DO](https://img.shields.io/badge/LINUX%20DO-community-f18500)](https://linux.do)
 
 把 ChatGPT、Claude、Cursor 等 AI 工具复制出来的 **Markdown** 转成 Word 可识别的富文本、`.docx` 或 **PDF**。公式会尽量变成可编辑的 Word 公式（OMML）。
 
@@ -114,6 +115,13 @@ md2word/
 ```
 
 默认导出目录：`文档/Documents/md2word/`。
+
+## 社区
+
+本项目**认可并链接** [LINUX DO](https://linux.do/) 社区。欢迎佬友在 L 站讨论、反馈和分享使用体验。
+
+- [LINUX DO](https://linux.do/) — 社区讨论与反馈
+- [GitHub Issues](https://github.com/wanxiao2018/md2word/issues) — 问题反馈
 
 ## 参与贡献
 

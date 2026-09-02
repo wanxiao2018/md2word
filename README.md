@@ -5,6 +5,7 @@
 [![CI](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml/badge.svg)](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![LINUX DO](https://img.shields.io/badge/LINUX%20DO-community-f18500)](https://linux.do)
 
 Turn Markdown copied from ChatGPT, Claude, Cursor, and similar tools into Word-ready rich text, `.docx`, or **PDF**. Equations are converted to editable Word formulas (OMML) when possible.
 
@@ -113,6 +114,13 @@ md2word/
 ```
 
 Default export folder: `Documents/md2word/`.
+
+## Community
+
+md2word acknowledges and is shared with the [LINUX DO](https://linux.do/) community.
+
+- [LINUX DO](https://linux.do/) — discussion, feedback, and Chinese-speaking users
+- [GitHub Issues](https://github.com/wanxiao2018/md2word/issues) — bug reports
 
 ## Contributing
 
