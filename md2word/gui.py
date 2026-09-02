@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import sys
+import threading
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Optional
+from typing import Callable, Optional
 
 from . import clipboard, converter
 from .wordcom import word_installed
@@ -171,6 +172,7 @@ class Md2WordApp(tk.Tk):
         self._watch_var = tk.BooleanVar(value=False)
         self._auto_convert_var = tk.BooleanVar(value=True)
         self._toggles: list[CheckToggle] = []
+        self._action_btns: list[ttk.Button] = []
         self._pandoc_ok = converter.find_pandoc() is not None
         self._word_ok = word_installed()
         self._last_docx: Optional[Path] = None
@@ -347,9 +349,9 @@ class Md2WordApp(tk.Tk):
         tk.Label(import_row, text="导入", bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
             side=tk.LEFT, padx=(0, 10)
         )
-        ttk.Button(import_row, text="从剪贴板导入", command=self.import_clipboard).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(import_row, text="打开文件", command=self.open_file).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(import_row, text="清空", command=self.clear_editor).pack(side=tk.LEFT, padx=(0, 16))
+        self._btn(import_row, "从剪贴板导入", self.import_clipboard).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(import_row, "打开文件", self.open_file).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(import_row, "清空", self.clear_editor).pack(side=tk.LEFT, padx=(0, 16))
         watch_toggle = CheckToggle(
             import_row,
             "监视剪贴板",
@@ -368,15 +370,10 @@ class Md2WordApp(tk.Tk):
         tk.Label(export_row, text="输出", bg=CARD_BG, fg="#334155", font=(UI_FONT, 9, "bold")).pack(
             side=tk.LEFT, padx=(0, 10)
         )
-        ttk.Button(
-            export_row,
-            text="转换并复制到剪贴板",
-            style="Accent.TButton",
-            command=self.convert_to_clipboard,
-        ).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(export_row, text="保存 Word", command=self.save_docx).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(export_row, text="导出 PDF", command=self.save_pdf).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(export_row, text="转换并打开 Word", command=self.convert_and_open).pack(side=tk.LEFT)
+        self._btn(export_row, "转换并复制到剪贴板", self.convert_to_clipboard).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, "保存 Word", self.save_docx).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, "导出 PDF", self.save_pdf).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn(export_row, "转换并打开 Word", self.convert_and_open).pack(side=tk.LEFT)
 
         tk.Label(
             pad,
@@ -479,6 +476,23 @@ class Md2WordApp(tk.Tk):
         )
         self._status_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12), pady=7)
 
+    def _btn(self, parent, text: str, command) -> ttk.Button:
+        btn = ttk.Button(parent, text=text, command=command)
+        self._action_btns.append(btn)
+        return btn
+
+    def _run_bg(self, work: Callable, done: Callable) -> None:
+        def worker() -> None:
+            result = None
+            err = None
+            try:
+                result = work()
+            except Exception as exc:  # noqa: BLE001
+                err = exc
+            self.after(0, lambda r=result, e=err: done(r, e))
+
+        threading.Thread(target=worker, daemon=True).start()
+
     def _bind_keys(self, widget, key: str, handler) -> None:
         widget.bind(f"<Control-{key}>", handler)
         widget.bind(f"<Control-{key.upper()}>", handler)
@@ -513,6 +527,9 @@ class Md2WordApp(tk.Tk):
     def _set_busy(self, busy: bool, msg: Optional[str] = None) -> None:
         self._busy = busy
         self.config(cursor="watch" if busy else "")
+        state = tk.DISABLED if busy else tk.NORMAL
+        for btn in self._action_btns:
+            btn.configure(state=state)
         if msg:
             self._set_status(msg, "busy" if busy else "info")
         self.update_idletasks()
@@ -600,36 +617,26 @@ class Md2WordApp(tk.Tk):
 
     def convert_to_clipboard(self) -> None:
         md = self._ensure_content()
-        if md is None:
-            return
-        if self._busy:
+        if md is None or self._busy:
             return
         self._set_busy(True, "正在转换为 Word 公式并复制…")
-        self.after(10, lambda: self._do_convert_clipboard(md))
+        self._run_bg(lambda: converter.copy_markdown_for_word(md), self._after_convert_clipboard)
 
-    def _do_convert_clipboard(self, md: str) -> None:
-        try:
-            res = converter.copy_markdown_for_word(md)
-            if not res.success:
-                messagebox.showerror("转换失败", res.message)
-                self._set_status(res.message, "err")
-                return
-            self._set_status(res.message, "ok")
-            messagebox.showinfo(
-                "转换完成",
-                f"已复制到剪贴板。\n\n请打开 Word，按 {clipboard.paste_shortcut()} 粘贴。\n\n"
-                "数学公式会作为 Word 可编辑公式粘贴；\n"
-                "正文已设为首行缩进 2 字符、两端对齐、1.5 倍行距。",
-            )
-        except Exception as exc:  # noqa: BLE001
-            messagebox.showerror("错误", f"写入剪贴板失败：\n{exc}")
-            self._set_status(f"失败：{exc}", "err")
-        finally:
-            self._set_busy(False)
+    def _after_convert_clipboard(self, res, err) -> None:
+        self._set_busy(False)
+        if err is not None:
+            messagebox.showerror("错误", f"写入剪贴板失败：\n{err}")
+            self._set_status(f"失败：{err}", "err")
+            return
+        if not res.success:
+            messagebox.showerror("转换失败", res.message)
+            self._set_status(res.message, "err")
+            return
+        self._set_status(res.message, "ok")
 
     def save_docx(self) -> None:
         md = self._ensure_content()
-        if md is None:
+        if md is None or self._busy:
             return
         DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -644,25 +651,30 @@ class Md2WordApp(tk.Tk):
         if not path:
             return
         self._set_busy(True, "正在生成 .docx…")
-        try:
-            res = converter.markdown_to_docx(md, Path(path))
-            if res.success:
-                self._last_docx = Path(path)
-                self._set_status(res.message, "ok")
-                if messagebox.askyesno("保存成功", f"{res.message}\n\n是否立即用 Word 打开？"):
-                    try:
-                        converter.open_file(Path(path))
-                    except Exception as exc:  # noqa: BLE001
-                        messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
-            else:
-                messagebox.showerror("保存失败", res.message)
-                self._set_status(res.message, "err")
-        finally:
-            self._set_busy(False)
+        out = Path(path)
+        self._run_bg(lambda: converter.markdown_to_docx(md, out), lambda res, err: self._after_save_docx(res, err, out))
+
+    def _after_save_docx(self, res, err, path: Path) -> None:
+        self._set_busy(False)
+        if err is not None:
+            messagebox.showerror("保存失败", str(err))
+            self._set_status(str(err), "err")
+            return
+        if not res.success:
+            messagebox.showerror("保存失败", res.message)
+            self._set_status(res.message, "err")
+            return
+        self._last_docx = path
+        self._set_status(res.message, "ok")
+        if messagebox.askyesno("保存成功", f"{res.message}\n\n是否立即用 Word 打开？"):
+            try:
+                converter.open_file(path)
+            except Exception as exc:  # noqa: BLE001
+                messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
 
     def save_pdf(self) -> None:
         md = self._ensure_content()
-        if md is None:
+        if md is None or self._busy:
             return
         DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -677,43 +689,52 @@ class Md2WordApp(tk.Tk):
         if not path:
             return
         self._set_busy(True, "正在导出 PDF…")
-        try:
-            res = converter.markdown_to_pdf(md, Path(path))
-            if res.success:
-                self._set_status(res.message, "ok")
-                if messagebox.askyesno("导出成功", f"{res.message}\n\n是否立即打开？"):
-                    try:
-                        converter.open_file(Path(path))
-                    except Exception as exc:  # noqa: BLE001
-                        messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
-            else:
-                messagebox.showerror("导出失败", res.message)
-                self._set_status(res.message, "err")
-        finally:
-            self._set_busy(False)
+        out = Path(path)
+        self._run_bg(lambda: converter.markdown_to_pdf(md, out), lambda res, err: self._after_save_pdf(res, err, out))
+
+    def _after_save_pdf(self, res, err, path: Path) -> None:
+        self._set_busy(False)
+        if err is not None:
+            messagebox.showerror("导出失败", str(err))
+            self._set_status(str(err), "err")
+            return
+        if not res.success:
+            messagebox.showerror("导出失败", res.message)
+            self._set_status(res.message, "err")
+            return
+        self._set_status(res.message, "ok")
+        if messagebox.askyesno("导出成功", f"{res.message}\n\n是否立即打开？"):
+            try:
+                converter.open_file(path)
+            except Exception as exc:  # noqa: BLE001
+                messagebox.showwarning("提示", f"已保存，但无法自动打开：\n{exc}")
 
     def convert_and_open(self) -> None:
         md = self._ensure_content()
-        if md is None:
+        if md is None or self._busy:
             return
         DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         out = DEFAULT_EXPORT_DIR / f"md2word_{stamp}.docx"
         self._set_busy(True, "正在生成 .docx…")
+        self._run_bg(lambda: converter.markdown_to_docx(md, out), lambda res, err: self._after_convert_open(res, err, out))
+
+    def _after_convert_open(self, res, err, out: Path) -> None:
+        self._set_busy(False)
+        if err is not None:
+            messagebox.showerror("转换失败", str(err))
+            self._set_status(str(err), "err")
+            return
+        if not res.success or not res.output_path:
+            messagebox.showerror("转换失败", res.message)
+            self._set_status(res.message, "err")
+            return
+        self._last_docx = res.output_path
+        self._set_status(res.message + " — 正在打开…", "ok")
         try:
-            res = converter.markdown_to_docx(md, out)
-            if not res.success or not res.output_path:
-                messagebox.showerror("转换失败", res.message)
-                self._set_status(res.message, "err")
-                return
-            self._last_docx = res.output_path
-            self._set_status(res.message + " — 正在打开…", "ok")
-            try:
-                converter.open_file(res.output_path)
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showwarning("提示", f"文档已生成：\n{res.output_path}\n\n但无法自动打开：\n{exc}")
-        finally:
-            self._set_busy(False)
+            converter.open_file(res.output_path)
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showwarning("提示", f"文档已生成：\n{res.output_path}\n\n但无法自动打开：\n{exc}")
 
     def _toggle_watch(self) -> None:
         for toggle in self._toggles:
@@ -755,20 +776,21 @@ class Md2WordApp(tk.Tk):
         if not md.strip() or self._busy:
             return
         self._set_busy(True, "监视模式：正在自动转换…")
+        self._run_bg(lambda: converter.copy_markdown_for_word(md), self._after_auto_convert)
+
+    def _after_auto_convert(self, res, err) -> None:
+        self._set_busy(False)
+        if err is not None:
+            self._set_status(f"自动转换失败：{err}", "err")
+            return
+        if not res.success:
+            self._set_status(f"自动转换失败：{res.message}", "err")
+            return
         try:
-            res = converter.copy_markdown_for_word(md)
-            if not res.success:
-                self._set_status(f"自动转换失败：{res.message}", "err")
-                return
-            try:
-                self._last_clip_hash = hash(clipboard.get_text())
-            except Exception:  # noqa: BLE001
-                pass
-            self._set_status(res.message, "ok")
-        except Exception as exc:  # noqa: BLE001
-            self._set_status(f"自动转换失败：{exc}", "err")
-        finally:
-            self._set_busy(False)
+            self._last_clip_hash = hash(clipboard.get_text())
+        except Exception:  # noqa: BLE001
+            pass
+        self._set_status(res.message, "ok")
 
     def _on_close(self) -> None:
         self._watch_var.set(False)

@@ -43,10 +43,19 @@ class ConvertResult:
     engine: str = "pandoc"
 
 
+_pandoc_cache: Optional[str] = None
+_pandoc_checked = False
+
+
 def find_pandoc() -> Optional[str]:
     """Locate pandoc executable."""
+    global _pandoc_cache, _pandoc_checked
+    if _pandoc_checked:
+        return _pandoc_cache
     found = shutil.which("pandoc")
     if found:
+        _pandoc_checked = True
+        _pandoc_cache = found
         return found
     candidates = [
         Path(os.environ.get("LOCALAPPDATA", "")) / "Pandoc" / "pandoc.exe",
@@ -58,7 +67,11 @@ def find_pandoc() -> Optional[str]:
     ]
     for path in candidates:
         if path.is_file():
-            return str(path)
+            _pandoc_checked = True
+            _pandoc_cache = str(path)
+            return _pandoc_cache
+    _pandoc_checked = True
+    _pandoc_cache = None
     return None
 
 

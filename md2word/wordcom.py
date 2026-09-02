@@ -28,12 +28,18 @@ def word_installed() -> bool:
 
 
 def _dispatch_word():
+    """Return (word, owned). owned=True means we launched Word and must quit it."""
     import pythoncom
     import win32com.client
 
     pythoncom.CoInitialize()
-    word = win32com.client.DispatchEx("Word.Application")
-    word.Visible = False
+    owned = False
+    try:
+        word = win32com.client.GetActiveObject("Word.Application")
+    except Exception:  # noqa: BLE001
+        word = win32com.client.DispatchEx("Word.Application")
+        owned = True
+        word.Visible = False
     try:
         word.DisplayAlerts = 0
     except Exception:  # noqa: BLE001
@@ -43,14 +49,15 @@ def _dispatch_word():
         word.AutomationSecurity = 3
     except Exception:  # noqa: BLE001
         pass
-    return word
+    return word, owned
 
 
-def _quit_word(word) -> None:
-    try:
-        word.Quit()
-    except Exception:  # noqa: BLE001
-        pass
+def _quit_word(word, owned: bool) -> None:
+    if owned:
+        try:
+            word.Quit()
+        except Exception:  # noqa: BLE001
+            pass
     try:
         import pythoncom
 
@@ -74,7 +81,7 @@ def copy_docx_to_clipboard(docx_path: Path) -> None:
     if os.name != "nt":
         raise RuntimeError("当前系统没有可用的 Word 自动化接口")
 
-    word = _dispatch_word()
+    word, owned = _dispatch_word()
     doc = None
     try:
         doc = word.Documents.Open(
@@ -90,7 +97,7 @@ def copy_docx_to_clipboard(docx_path: Path) -> None:
                 doc.Close(SaveChanges=False)
             except Exception:  # noqa: BLE001
                 pass
-        _quit_word(word)
+        _quit_word(word, owned)
 
 
 def export_docx_to_pdf(docx_path: Path, pdf_path: Path) -> None:
@@ -106,7 +113,7 @@ def export_docx_to_pdf(docx_path: Path, pdf_path: Path) -> None:
     if os.name != "nt":
         raise RuntimeError("当前系统没有可用的 Word 自动化接口")
 
-    word = _dispatch_word()
+    word, owned = _dispatch_word()
     doc = None
     try:
         doc = word.Documents.Open(
@@ -129,7 +136,7 @@ def export_docx_to_pdf(docx_path: Path, pdf_path: Path) -> None:
                 doc.Close(SaveChanges=False)
             except Exception:  # noqa: BLE001
                 pass
-        _quit_word(word)
+        _quit_word(word, owned)
 
 
 def find_soffice() -> Optional[str]:

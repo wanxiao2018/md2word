@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import time
 from typing import Optional
 
 
@@ -14,13 +15,28 @@ def _require_win32():
         raise RuntimeError("需要安装 pywin32：pip install pywin32") from exc
 
 
+def _open_clipboard(retries: int = 8, delay: float = 0.05) -> None:
+    """OpenClipboard can block or fail if another app holds the clipboard."""
+    import win32clipboard
+
+    last: Optional[BaseException] = None
+    for _ in range(retries):
+        try:
+            win32clipboard.OpenClipboard()
+            return
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            time.sleep(delay)
+    raise RuntimeError(f"无法打开剪贴板：{last}") from last
+
+
 def get_text() -> str:
     """Read plain text from clipboard."""
     _require_win32()
     import win32clipboard
     import win32con
 
-    win32clipboard.OpenClipboard()
+    _open_clipboard()
     try:
         if win32clipboard.IsClipboardFormatAvailable(win32con.CF_UNICODETEXT):
             data = win32clipboard.GetClipboardData(win32con.CF_UNICODETEXT)
@@ -41,7 +57,7 @@ def set_text(text: str) -> None:
     import win32clipboard
     import win32con
 
-    win32clipboard.OpenClipboard()
+    _open_clipboard()
     try:
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, text)
@@ -144,7 +160,7 @@ def set_html(html: str, plain_fallback: Optional[str] = None) -> None:
 
     cf_html = build_cf_html(html)
     # Register HTML Format
-    win32clipboard.OpenClipboard()
+    _open_clipboard()
     try:
         win32clipboard.EmptyClipboard()
         html_format = win32clipboard.RegisterClipboardFormat("HTML Format")
@@ -162,7 +178,7 @@ def set_rtf(rtf: str, plain_fallback: Optional[str] = None) -> None:
     import win32clipboard
     import win32con
 
-    win32clipboard.OpenClipboard()
+    _open_clipboard()
     try:
         win32clipboard.EmptyClipboard()
         # CF_RTF is a registered format name "Rich Text Format"
@@ -193,7 +209,7 @@ def set_rich_for_word(
     if not html and not rtf and plain is None:
         raise ValueError("没有可写入剪贴板的内容")
 
-    win32clipboard.OpenClipboard()
+    _open_clipboard()
     try:
         win32clipboard.EmptyClipboard()
         formats: list[str] = []
