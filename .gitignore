@@ -1,0 +1,34 @@
+# Build / packaging
+build/
+dist/
+.pyinstaller/
+.tmp/
+*.spec
+build_log.txt
+build_err.txt
+build_status.txt
+build_pid.txt
+md2word.exe
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# Generated documents
+*.docx
+*.pdf
+docs/frames/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

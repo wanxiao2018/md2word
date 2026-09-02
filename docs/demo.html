@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>md2word demo</title>
+  <style>
+    :root {
+      --navy: #0f2744;
+      --page: #d9e3ef;
+      --card: #ffffff;
+      --accent: #1d4ed8;
+      --accent-dark: #1e40af;
+      --border: #c9d4e3;
+      --muted: #64748b;
+      --text: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      background: #c5d2e1;
+      font-family: "Microsoft YaHei UI", "Segoe UI", sans-serif;
+    }
+    .stage {
+      width: 1280px;
+      height: 720px;
+      padding: 22px 22px 18px;
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+    .win {
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: 0 14px 36px rgba(15, 39, 68, 0.22);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .caption {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      background: #eef3f8;
+      border-bottom: 1px solid #d7e0ea;
+      color: #334155;
+      font-size: 12px;
+    }
+    .dots { display: flex; gap: 5px; }
+    .dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+    .dots i:nth-child(1) { background: #f87171; }
+    .dots i:nth-child(2) { background: #fbbf24; }
+    .dots i:nth-child(3) { background: #34d399; }
+    .caption b { font-weight: 600; }
+
+    /* md2word */
+    .md-header {
+      background: var(--navy);
+      color: #f8fafc;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .brand h1 { font-size: 18px; line-height: 1.1; }
+    .brand p { font-size: 11px; color: #93c5fd; margin-top: 2px; }
+    .engines { text-align: right; color: #7f9dc4; font-size: 11px; }
+    .chips { margin-top: 4px; display: flex; gap: 12px; justify-content: flex-end; color: #dbeafe; }
+    .chips span { color: #86efac; font-weight: 700; margin-right: 4px; }
+
+    .toolbar {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+    .row:last-child { margin-bottom: 0; }
+    .lab { font-size: 11px; font-weight: 700; color: #334155; width: 32px; }
+    .btn {
+      border: 1px solid var(--border);
+      background: #f1f5fa;
+      color: #334155;
+      font: 12px "Microsoft YaHei UI", sans-serif;
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+    .btn.accent {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 700;
+    }
+    body[data-step="1"] .btn-import,
+    body[data-step="2"] .btn.accent {
+      outline: 2px solid #60a5fa;
+      outline-offset: 1px;
+    }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 7px; }
+
+    .editor-wrap { flex: 1; display: flex; flex-direction: column; background: #e7eef6; padding: 10px; min-height: 0; }
+    .editor {
+      flex: 1;
+      background: #fbfcfe;
+      border: 1px solid #d6dee9;
+      border-radius: 6px;
+      padding: 12px 14px;
+      font: 13px/1.55 Consolas, "Cascadia Mono", monospace;
+      color: #1e293b;
+      white-space: pre-wrap;
+      position: relative;
+      overflow: hidden;
+    }
+    .placeholder { color: #94a3b8; }
+    .md-body { display: none; }
+    body[data-step="1"] .placeholder,
+    body[data-step="2"] .placeholder,
+    body[data-step="3"] .placeholder { display: none; }
+    body[data-step="1"] .md-body,
+    body[data-step="2"] .md-body,
+    body[data-step="3"] .md-body { display: block; }
+    .tok-h { color: #1d4ed8; font-weight: 700; }
+    .tok-math { color: #0f766e; }
+    .tok-list { color: #334155; }
+    .status {
+      height: 28px;
+      background: #dbe4f0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 12px;
+      color: #1e293b;
+    }
+    body[data-step="1"] .status { color: #15803d; }
+    body[data-step="2"] .status { color: #1d4ed8; }
+    body[data-step="3"] .status { color: #15803d; }
+
+    /* arrow */
+    .mid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--navy);
+    }
+    .arrow {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 22px; font-weight: 700;
+      box-shadow: 0 8px 18px rgba(29, 78, 216, 0.35);
+    }
+    .mid small { font-size: 11px; color: #334155; font-weight: 700; letter-spacing: 0.04em; }
+
+    /* Word */
+    .word-ribbon {
+      background: #185abd;
+      color: #fff;
+      padding: 8px 12px 0;
+      font-size: 12px;
+    }
+    .word-title { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; }
+    .word-icon {
+      width: 18px; height: 18px; border-radius: 3px;
+      background: #2b7cd3;
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 11px;
+    }
+    .tabs { display: flex; gap: 14px; padding: 0 4px 8px; opacity: 0.92; }
+    .tabs em { font-style: normal; border-bottom: 2px solid #fff; padding-bottom: 4px; }
+    .word-stage {
+      flex: 1;
+      background: #e6e6e6;
+      padding: 16px 22px;
+      min-height: 0;
+    }
+    .page {
+      height: 100%;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      padding: 28px 36px 24px;
+      overflow: hidden;
+      color: #1a1a1a;
+    }
+    .page h2 {
+      font: 700 18px/1.3 "Calibri", "Microsoft YaHei UI", sans-serif;
+      margin-bottom: 12px;
+    }
+    .page p {
+      font: 14px/1.5 "Calibri", "Microsoft YaHei UI", serif;
+      text-align: justify;
+      text-indent: 2em;
+      margin-bottom: 10px;
+    }
+    .omml {
+      text-align: center;
+      font: italic 20px/1.4 Cambria, "Cambria Math", "Times New Roman", serif;
+      color: #1e3a5f;
+      margin: 14px 0 16px;
+    }
+    .omml .box {
+      display: inline-block;
+      border: 1px dashed #93c5fd;
+      background: #f8fbff;
+      padding: 6px 16px;
+      border-radius: 4px;
+    }
+    .page ul { margin: 0 0 12px 2.2em; font: 14px/1.5 "Calibri", "Microsoft YaHei UI", serif; }
+    .page li { margin: 3px 0; }
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      font-style: italic;
+      line-height: 1;
+    }
+    .frac span { padding: 0 4px; }
+    .frac .num { border-bottom: 1.5px solid #1e3a5f; padding-bottom: 3px; margin-bottom: 3px; }
+    .word-empty {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    body[data-step="0"] .word-doc,
+    body[data-step="1"] .word-doc,
+    body[data-step="2"] .word-doc { display: none; }
+    body[data-step="3"] .word-empty { display: none; }
+    body[data-step="3"] .word-doc { display: block; }
+
+    .labels {
+      position: absolute;
+      left: 22px; right: 22px; bottom: 6px;
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      font-size: 11px;
+      color: #475569;
+      pointer-events: none;
+    }
+    .labels span { text-align: center; }
+  </style>
+</head>
+<body data-step="0">
+  <div class="stage">
+    <section class="win">
+      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b>md2word — Markdown 转 Word</b></div>
+      <div class="md-header">
+        <div class="brand">
+          <img src="../assets/app-32.png" alt="" />
+          <div>
+            <h1>md2word</h1>
+            <p>Markdown → Word  ·  公式可编辑</p>
+          </div>
+        </div>
+        <div class="engines">
+          引擎
+          <div class="chips"><div><span>√</span>Pandoc</div><div><span>√</span>Word</div></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="row">
+          <div class="lab">导入</div>
+          <button class="btn btn-import">从剪贴板导入</button>
+          <button class="btn">打开文件</button>
+          <button class="btn">清空</button>
+        </div>
+        <div class="row">
+          <div class="lab">输出</div>
+          <button class="btn accent">转换并复制到剪贴板</button>
+          <button class="btn">保存 Word</button>
+        </div>
+        <div class="hint">正文：首行缩进 2 字符  ·  两端对齐  ·  1.5 倍行距  ·  公式可编辑</div>
+      </div>
+      <div class="editor-wrap">
+        <div class="editor">
+          <div class="placeholder">在这里粘贴 AI 输出的 Markdown 文本…<br/><br/>支持：标题 / 列表 / 表格 / LaTeX 公式</div>
+          <div class="md-body"><span class="tok-h">## 复利增长</span>
+
+本金 $P$ 按年利率 $r$ 增长 $t$ 年：
+
+<span class="tok-math">$$
+A = P(1+r)^{t}
+$$</span>
+
+<span class="tok-list">- 行内公式：$E = mc^2$
+- AI 写法：(\mu) 与 (\hat{x})</span>
+
+<span class="tok-math">[
+
+\Delta = b^2-4ac
+
+]</span></div>
+        </div>
+      </div>
+      <div class="status" id="status">就绪</div>
+    </section>
+
+    <div class="mid">
+      <div class="arrow">→</div>
+      <small>转换</small>
+    </div>
+
+    <section class="win">
+      <div class="caption"><span class="dots"><i></i><i></i><i></i></span><b>文档1 - Word</b></div>
+      <div class="word-ribbon">
+        <div class="word-title"><div class="word-icon">W</div>文档1</div>
+        <div class="tabs"><em>开始</em><span>插入</span><span>设计</span><span>布局</span></div>
+      </div>
+      <div class="word-stage">
+        <div class="page">
+          <div class="word-empty">粘贴后将在这里看到 Word 排版</div>
+          <div class="word-doc">
+            <h2>复利增长</h2>
+            <p>本金 <i>P</i> 按年利率 <i>r</i> 增长 <i>t</i> 年：</p>
+            <div class="omml"><span class="box"><i>A</i> = <i>P</i>(1+<i>r</i>)<sup><i>t</i></sup></span></div>
+            <ul>
+              <li>行内公式：<i>E</i> = <i>mc</i><sup>2</sup></li>
+              <li>AI 写法：<i>μ</i> 与 <i>x̂</i></li>
+            </ul>
+            <div class="omml"><span class="box"><i>Δ</i> = <i>b</i><sup>2</sup> − 4<i>ac</i></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    const texts = {
+      0: "就绪",
+      1: "√ 已从剪贴板导入 Markdown",
+      2: "… 正在转换为 Word 公式与排版",
+      3: "√ 已复制到剪贴板，可在 Word 中 Ctrl+V"
+    };
+    window.setStep = (n) => {
+      document.body.dataset.step = String(n);
+      document.getElementById("status").textContent = texts[n];
+      return n;
+    };
+    const q = Number(new URLSearchParams(location.search).get("step") || "0");
+    window.setStep(Number.isFinite(q) ? q : 0);
+  </script>
+</body>
+</html>
