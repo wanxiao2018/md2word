@@ -135,7 +135,8 @@ _SUB_MAP = {
     "p": "ₚ", "r": "ᵣ", "s": "ₛ", "t": "ₜ", "u": "ᵤ", "v": "ᵥ",
 }
 
-_CHUNK_RE = re.compile(r"§§MD2WORD_CHUNK_(\d+)§§")
+# Placeholder must not contain _, ^, or \\ — those trigger paren-math wrapping.
+_CHUNK_RE = re.compile(r"§§MD2WORDCHUNK(\d+)§§")
 
 
 def _map_script(s: str, mapping: dict[str, str], prefix: str) -> str:
@@ -253,7 +254,7 @@ def _protect_segments(
 
     def keep(m: re.Match[str]) -> str:
         chunks.append(m.group(0))
-        return f"§§MD2WORD_CHUNK_{len(chunks) - 1}§§"
+        return f"§§MD2WORDCHUNK{len(chunks) - 1}§§"
 
     text = re.sub(r"```[\s\S]*?```", keep, text)
     text = re.sub(r"`[^`\n]+`", keep, text)
@@ -292,10 +293,19 @@ def _as_inline(body: str) -> str:
     return "$" + inner + "$"
 
 
+def _rewrite_tex_tags(text: str) -> str:
+    """Turn \\tag{N} into a trailing (N). Pandoc's OMML writer rejects \\tag."""
+    return re.sub(r"\\tag\{([^}]+)\}", r"\\qquad (\1)", text)
+
+
 def prepare_markdown_math(text: str) -> str:
     """Wrap AI-style math in $...$ / $$...$$ so Pandoc can emit OMML."""
     if not text:
         return text
+
+    text, chunks = _protect_segments(text, include_math=False)
+    text = _rewrite_tex_tags(text)
+    text = _restore_segments(text, chunks)
 
     text, chunks = _protect_segments(text, include_math=True)
 
@@ -342,6 +352,11 @@ def prepare_markdown_math(text: str) -> str:
 
     def paren_math(m: re.Match[str]) -> str:
         inner = m.group(1)
+        stripped = inner.strip()
+        if _CHUNK_RE.search(inner):
+            return stripped
+        if stripped.startswith("$"):
+            return stripped
         if not re.search(r"\\[A-Za-z]+|[_^]", inner):
             return m.group(0)
         return _as_inline(inner)
@@ -359,6 +374,59 @@ def prepare_markdown_math(text: str) -> str:
 
     text = re.sub(r"(?m)^[ \t]*\\[A-Za-z].+$", bare_latex_line, text)
 
+    text = _restore_segments(text, chunks)
+    text = re.sub(r"\(\s*(\$(?:\\.|[^$])+\$)\s*\)", r"\1", text)
+    text = re.sub(r"\n{4,}", "\n\n\n", text)
+    return text
+
+
+def _is_pipe_table_row(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("|") and s.endswith("|") and len(s) > 2
+
+
+def _is_list_item(line: str) -> bool:
+    return bool(re.match(r"^[ \t]*(?:[-*+]|\d{1,3}\.)[ \t]+\S", line))
+
+
+def prepare_markdown_layout(text: str) -> str:
+    """Insert blank lines so Pandoc sees tables, lists, and display math."""
+    if not text:
+        return text
+
+    text, chunks = _protect_segments(text, include_math=False)
+    lines = text.split("\n")
+    out: list[str] = []
+
+    for line in lines:
+        prev = out[-1] if out else ""
+        stripped = line.strip()
+
+        if _is_pipe_table_row(line) and prev.strip() and not _is_pipe_table_row(prev):
+            out.append("")
+        elif (
+            _is_list_item(line)
+            and prev.strip()
+            and not _is_list_item(prev)
+            and not prev.lstrip().startswith("#")
+            and not prev.lstrip().startswith(">")
+        ):
+            out.append("")
+        elif stripped.startswith("$$") and prev.strip() and prev.strip() != "$$":
+            out.append("")
+
+        out.append(line)
+
+    spaced: list[str] = []
+    for i, line in enumerate(out):
+        spaced.append(line)
+        stripped = line.strip()
+        if not stripped.endswith("$$"):
+            continue
+        nxt = out[i + 1] if i + 1 < len(out) else ""
+        if nxt.strip() and not nxt.strip().startswith("$$") and not _is_pipe_table_row(nxt):
+            spaced.append("")
+    text = "\n".join(spaced)
     text = _restore_segments(text, chunks)
     text = re.sub(r"\n{4,}", "\n\n\n", text)
     return text

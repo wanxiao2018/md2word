@@ -13,7 +13,12 @@ from typing import Optional
 
 from .docxstyle import polish_docx
 from .i18n import t
-from .mathprep import plain_text_from_markdown, prepare_markdown_math, strip_thematic_breaks
+from .mathprep import (
+    plain_text_from_markdown,
+    prepare_markdown_layout,
+    prepare_markdown_math,
+    strip_thematic_breaks,
+)
 
 
 SUPPORTED_EXTS = {".md", ".markdown", ".txt", ".mdx"}
@@ -111,7 +116,9 @@ def normalize_markdown(text: str) -> str:
     # Ensure blank line before ATX headings when glued to previous text
     text = re.sub(r"([^\n])\n(#{1,6}\s+)", r"\1\n\n\2", text)
     text = strip_thematic_breaks(text)
+    text = prepare_markdown_layout(text)
     text = prepare_markdown_math(text)
+    text = prepare_markdown_layout(text)
     return text.strip() + "\n"
 
 
@@ -449,7 +456,7 @@ def _inject_word_friendly_styles(html: str) -> str:
     text-align: justify;
     line-height: 1.5;
   }
-  li p, td p, th p, blockquote p { text-indent: 0; }
+  li p, td p, th p, blockquote p, caption, .caption { text-indent: 0; }
   code, pre {
     font-family: Consolas, "Courier New", monospace;
     font-size: 10.5pt;
@@ -474,16 +481,19 @@ def _inject_word_friendly_styles(html: str) -> str:
   }
   table {
     border-collapse: collapse;
-    margin: 8pt 0;
+    margin: 8pt auto;
+    width: 100%;
   }
   th, td {
-    border: 1px solid #999;
+    border: 1px solid #666;
     padding: 4pt 8pt;
     text-indent: 0;
+    text-align: center;
+    vertical-align: middle;
   }
-  th { background: #f0f0f0; }
-  ul, ol { margin: 0 0 8pt 22pt; }
-  li { margin: 2pt 0; text-indent: 0; }
+  th { background: #f2f2f2; font-weight: bold; }
+  ul, ol { margin: 0; padding-left: 0; }
+  li { margin: 0; text-indent: 2em; text-align: justify; }
   a { color: #0563c1; }
   hr { display: none; border: none; height: 0; margin: 0; }
   .math.display, math[display="block"] {

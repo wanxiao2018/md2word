@@ -20,7 +20,11 @@ from md2word.converter import (
     markdown_to_pdf,
     normalize_markdown,
 )
-from md2word.mathprep import prepare_markdown_math, strip_thematic_breaks
+from md2word.mathprep import (
+    prepare_markdown_layout,
+    prepare_markdown_math,
+    strip_thematic_breaks,
+)
 from md2word import clipboard
 from md2word.i18n import set_lang, t
 from md2word.wordcom import word_installed
@@ -117,6 +121,33 @@ class MathPrepTests(unittest.TestCase):
         self.assertIn("段一", out)
         self.assertIn("段二", out)
 
+    def test_does_not_double_dollar_parenthetical_math(self) -> None:
+        src = r"**表2. 实验 ($M^{tar}(pProduct) = 10$)**"
+        out = prepare_markdown_math(src)
+        self.assertIn(r"$M^{tar}(pProduct) = 10$", out)
+        self.assertNotIn("$$", out)
+        self.assertNotIn("($M", out)
+
+    def test_rewrites_tag_for_pandoc(self) -> None:
+        src = r"$$\lambda_B = 1 \tag{1}$$"
+        out = prepare_markdown_math(src)
+        self.assertNotIn(r"\tag", out)
+        self.assertIn("(1)", out)
+
+    def test_layout_blank_line_before_table_and_list(self) -> None:
+        src = (
+            "**表1. 标题**\n"
+            "| a | b |\n"
+            "| --- | --- |\n"
+            "| 1 | 2 |\n\n"
+            "问题如下：\n"
+            "1. 第一问\n"
+            "2. 第二问\n"
+        )
+        out = prepare_markdown_layout(src)
+        self.assertRegex(out, r"标题\*\*\n\n\| a \| b \|")
+        self.assertRegex(out, r"问题如下：\n\n1\. 第一问")
+
 
 class NormalizeTests(unittest.TestCase):
     def test_normalize_sample(self) -> None:
@@ -159,6 +190,72 @@ class DocxConvertTests(unittest.TestCase):
         self.assertIn("text-indent: 2em", html)
         self.assertIn("text-align: justify", html)
         self.assertIn("line-height: 1.5", html)
+
+    def test_tables_lists_fonts_and_equation_tags(self) -> None:
+        src = r"""## 标题 Heading
+
+正文先行，Times New Roman 与中文混排。
+
+问题如下：
+1. 第一项需要换行后仍按正文首行缩进。
+2. 第二项。
+
+**表1. 质量参数 ($M^{tar}=10$)**
+| 名称 | 值 $\alpha$ |
+| :--- | :---------: |
+| A | 0.85 |
+| B | 0.10 |
+
+公式：
+$$\lambda_B = \frac{1-q_B}{\alpha_B} \tag{1}$$
+
+## 参考文献
+
+1. Zhang C. Robust Control // IEEE. 2024. V.21. P. 1–10.
+2. Сочнев А.Н. 网络模型. 2020.
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "layout.docx"
+            res = markdown_to_docx(src, path)
+            self.assertTrue(res.success, res.message)
+            document, styles = _docx_xml(path)
+            self.assertIn("<w:tbl", document)
+            self.assertNotIn(r"\tag", document)
+            self.assertGreater(document.count("oMath"), 1)
+            self.assertIn('w:ascii="Times New Roman"', document + styles)
+            self.assertIn('w:jc w:val="both"', document + styles)
+            numbered = re.findall(
+                r"<w:numPr>[\s\S]*?</w:p>",
+                document,
+            )
+            self.assertGreaterEqual(len(numbered), 2)
+            for block in numbered:
+                self.assertIn('w:firstLineChars="200"', block)
+                self.assertIn('w:leftChars="0"', block)
+                self.assertIn('w:rightChars="0"', block)
+                self.assertNotIn("w:hanging", block)
+            self.assertNotRegex(document, r"\$\$\\lambda")
+
+    def test_list_continuations_after_display_math_are_not_renumbered(self) -> None:
+        src = """## 附录
+
+1. 解得：
+   $$x=1$$
+   因此继续推导。
+2. 第二点：
+   $$y=2$$
+   得证。
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "list.docx"
+            res = markdown_to_docx(src, path)
+            self.assertTrue(res.success, res.message)
+            document, _ = _docx_xml(path)
+            numbered = re.findall(r"<w:numPr>[\s\S]*?</w:p>", document)
+            self.assertEqual(len(numbered), 2)
+            self.assertIn("因此继续推导", document)
+            self.assertIn("得证", document)
+            self.assertIn('w:firstLineChars="200"', document)
 
 
 class PdfExportTests(unittest.TestCase):
