@@ -83,6 +83,29 @@ chmod +x start.sh
 
 On macOS you can install Pandoc with Homebrew: `brew install pandoc`.
 
+Build macOS app bundle & DMG / ZIP:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 build_mac.py
+```
+
+Output: `dist/md2word.app`, `dist/md2word-macos.dmg`, and `dist/md2word-macos.zip`.
+
+### Cross-platform build
+
+```bash
+python build.py
+```
+
+This automatically runs `build_exe.py` on Windows or `build_mac.py` on macOS.
+
+## Releases
+
+Pre-built binaries are available on [GitHub Releases](https://github.com/wanxiao2018/md2word/releases):
+- **Windows**: `md2word.exe`
+- **macOS**: `md2word-macos-arm64.dmg` (Apple Silicon), `md2word-macos-x64.dmg` (Intel), and `.zip` archives
+
 ## Tests
 
 ```bash
@@ -98,7 +121,9 @@ md2word/
   main.py              # entry point
   start.bat            # Windows launcher
   start.sh             # macOS / Linux launcher
+  build.py             # Cross-platform build dispatcher
   build_exe.py         # Windows packager
+  build_mac.py         # macOS packager (.app, .dmg, .zip)
   md2word/
     converter.py       # Markdown → docx / html / pdf
     clipboard.py       # cross-platform clipboard
@@ -108,7 +133,7 @@ md2word/
     wordcom.py         # Word copy / PDF (COM / AppleScript)
     gui.py             # desktop UI
   examples/            # sample Markdown
-  assets/              # app icon
+  assets/              # app icon (.ico, .icns, .png)
   docs/demo.gif        # README demo (English)
   tests/               # unit tests
 ```

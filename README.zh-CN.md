@@ -82,6 +82,30 @@ chmod +x start.sh
 ```
 
 macOS 可用 Homebrew 安装 Pandoc：`brew install pandoc`。
+注意：macOS 若使用 Homebrew 安装的 Python，需确保包含 Tkinter：`brew install python-tk@3.12`。
+
+打包 macOS 应用（.app、.dmg、.zip）：
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 build_mac.py
+```
+
+产物：`dist/md2word.app`、`dist/md2word-macos.dmg` 以及 `dist/md2word-macos.zip`。
+
+### 跨平台打包
+
+```bash
+python build.py
+```
+
+在 Windows 上自动调用 `build_exe.py`，在 macOS 上自动调用 `build_mac.py`。
+
+## 下载发布版本
+
+编译好的安装包可在 [GitHub Releases](https://github.com/wanxiao2018/md2word/releases) 下载：
+- **Windows**：`md2word.exe`
+- **macOS**：`md2word-macos-arm64.dmg`（Apple Silicon M 系列芯片）、`md2word-macos-x64.dmg`（Intel 芯片）及对应 `.zip` 压缩包
 
 ## 测试
 
@@ -98,7 +122,9 @@ md2word/
   main.py              # 入口
   start.bat            # Windows 启动
   start.sh             # macOS / Linux 启动
+  build.py             # 跨平台打包入口
   build_exe.py         # Windows 打包脚本
+  build_mac.py         # macOS 打包脚本（.app、.dmg、.zip）
   md2word/
     converter.py       # Markdown → docx / html / pdf
     clipboard.py       # 跨平台剪贴板
@@ -108,7 +134,7 @@ md2word/
     wordcom.py         # Word 复制 / 导出 PDF（Windows COM / macOS AppleScript）
     gui.py             # 图形界面
   examples/            # 示例 Markdown
-  assets/              # 应用图标
+  assets/              # 应用图标（.ico、.icns、.png）
   docs/demo.gif        # 英文 README 演示动图
   docs/demo.zh-CN.gif  # 中文 README 演示动图
   tests/               # 单元测试

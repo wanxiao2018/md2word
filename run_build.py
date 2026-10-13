@@ -1,4 +1,4 @@
-﻿"""Detached PyInstaller builder. Writes build_status.txt when finished."""
+"""Detached PyInstaller builder. Writes build_status.txt when finished."""
 from __future__ import annotations
 
 import os
@@ -78,9 +78,11 @@ def main() -> int:
             errors="replace",
         )
         if proc.stdout:
+            print(proc.stdout)
             with LOG.open("a", encoding="utf-8") as f:
                 f.write(proc.stdout)
         if proc.stderr:
+            print(proc.stderr, file=sys.stderr)
             with LOG.open("a", encoding="utf-8") as f:
                 f.write(proc.stderr)
         log(f"PyInstaller exit code: {proc.returncode}")

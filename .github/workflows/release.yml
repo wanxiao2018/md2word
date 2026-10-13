@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.2.0)"
+        required: false
+        default: "v1.2.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows (exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Build Windows executable
+        run: |
+          python build_exe.py
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2word-windows
+          path: dist/md2word.exe
+
+  build-macos:
+    name: Build macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements-dev.txt
+
+      - name: Build macOS package
+        run: |
+          python3 build_mac.py
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: md2word-macos-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+
+  publish-release:
+    name: Publish Release Assets
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release_assets
+          # Flatten downloaded artifacts
+          find artifacts -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" \) -exec cp {} release_assets/ \;
+          cd release_assets
+          sha256sum * > SHA256SUMS.txt
+          echo "=== Release Assets ==="
+          ls -lh
+          echo "=== SHA256 Checksums ==="
+          cat SHA256SUMS.txt
+
+      - name: Determine Release Tag
+        id: release_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          if [ -z "$TAG" ]; then
+            TAG="v1.2.0"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: ${{ steps.release_tag.outputs.tag }}
+          files: release_assets/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false

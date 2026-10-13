@@ -9,6 +9,10 @@ build_err.txt
 build_status.txt
 build_pid.txt
 md2word.exe
+*.dmg
+*.zip
+*.app
+_dmg_staging/
 
 # Python
 __pycache__/
