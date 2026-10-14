@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-[![CI](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml/badge.svg)](https://github.com/wanxiao2018/md2word/actions/workflows/ci.yml)
+[![CI](https://github.com/itsdangding/md2word/actions/workflows/ci.yml/badge.svg)](https://github.com/itsdangding/md2word/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![LINUX DO](https://img.shields.io/badge/LINUX%20DO-community-f18500)](https://linux.do)
@@ -102,7 +102,7 @@ This automatically runs `build_exe.py` on Windows or `build_mac.py` on macOS.
 
 ## Releases
 
-Pre-built binaries are available on [GitHub Releases](https://github.com/wanxiao2018/md2word/releases):
+Pre-built binaries are available on [GitHub Releases](https://github.com/itsdangding/md2word/releases):
 - **Windows**: `md2word.exe`
 - **macOS**: `md2word-macos-arm64.dmg` (Apple Silicon), `md2word-macos-x64.dmg` (Intel), and `.zip` archives
 
@@ -145,7 +145,7 @@ Default export folder: `Documents/md2word/`.
 md2word acknowledges and is shared with the [LINUX DO](https://linux.do/) community.
 
 - [LINUX DO](https://linux.do/) — discussion, feedback, and Chinese-speaking users
-- [GitHub Issues](https://github.com/wanxiao2018/md2word/issues) — bug reports
+- [GitHub Issues](https://github.com/itsdangding/md2word/issues) — bug reports
 
 ## Contributing
 
